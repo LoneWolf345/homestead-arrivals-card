@@ -4,7 +4,7 @@
  * stays in its attributes), the hourly forecast for the sky at wheels-down, and the house's
  * guest switches. Read-only: tap → more-info. Companion to homestead-pool-card,
  * homestead-motoring-card, homestead-waterworks-card and homestead-month-card. */
-const HAC_VERSION = "2026.9.1";
+const HAC_VERSION = "2026.9.2";
 const INK = "#3a2d1f", PAPER = "#f3e7d3", TAN = "#a3876a", BROWN = "#7a6248",
   TERRA = "#c65f38", DOT = "#cfb894", GREEN = "#2f7f6f", PLUM = "#6f4f9a";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -184,7 +184,7 @@ class HomesteadArrivalsCard extends HTMLElement {
     }
     rows.push({ k: "Status", v: status ? cap(status) : "As booked", cls: status && /delay|cancel|divert/i.test(status) ? "due" : "", e: c.status_entity || c.window_entity });
     rows.push({ k: lead.past ? "Elapsed" : "Countdown", v: countdown(lead.start, now), cls: "", e: c.window_entity });
-    if (stay) rows.push({ k: "The stay", v: `${monDay(stay.a)}–${stay.b.getMonth() === stay.a.getMonth() ? stay.b.getDate() : monDay(stay.b)} · ${stay.nights} night${stay.nights === 1 ? "" : "s"}`, cls: "", e: c.window_entity });
+    if (stay) rows.push({ k: "The stay", v: `${monDay(stay.a)}${stay.b.getTime() === stay.a.getTime() ? "" : "–" + (stay.b.getMonth() === stay.a.getMonth() ? stay.b.getDate() : monDay(stay.b))} · ${stay.nights} night${stay.nights === 1 ? "" : "s"}`, cls: "", e: c.window_entity });
     if (gm) rows.push({ k: "Guest Mode", v: gm.state === "on" ? "On" : "Off", cls: gm.state === "on" ? "ok" : (lead.kind !== "departure" && !lead.past ? "due" : ""), e: c.guest_mode_entity });
     if (wifi) rows.push({ k: "Guest Wi-Fi", v: wifi.state === "on" ? "Lit" : "Dark", cls: wifi.state === "on" ? "ok" : "", e: c.guest_wifi_entity });
     if (al) rows.push({ k: "Alarm", v: cap(String(al.state).replace(/_/g, " ")), cls: "", e: c.alarm_entity });
