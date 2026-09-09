@@ -40,4 +40,29 @@ el = new Card(); el.setConfig(cfg); el.hass = mk([{ summary: "Uncle Bob flies ho
 h = el.shadowRoot.innerHTML;
 check("departure tomorrow, singular, AZA from words", h.includes("Uncle Bob fly home tomorrow at 6:15 AM") === false && h.includes("Uncle Bob flies") === false ? h.includes("Uncle Bob fly home tomorrow at 6:15 AM") : true);
 check("guest name from the stay + Mesa Gateway", h.includes("Uncle Bob") && h.includes("Mesa Gateway (AZA)") && h.includes("Southwest 402"));
-console.log(fails ? `\n${fails} FAILED` : "\nall passed"); process.exit(fails ? 1 : 0);
+console.log(fails ? `\n${fails} FAILED` : "\nall passed"); 
+// 5. live tracker: airborne, 12 min late
+{
+  const cfgL = Object.assign({}, cfg, { status_entity: "sensor.visitors_flight_status" });
+  const el5 = new Card(); el5.setConfig(cfgL);
+  el5.hass = mk([{ summary: "Arrive · Southwest 1234 · PHX 3:10 PM", start: "2026-09-08T15:10:00-07:00", end: "2026-09-08T16:00:00-07:00" }], stay, {
+    "sensor.visitors_flight_status": { state: "En route · landing 3:22 PM · 12 min late", attributes: { phase: "airborne", flight: "Southwest WN1234", eta: "3:22 PM", eta_ts: Math.floor(new Date(2026, 8, 8, 15, 22).getTime() / 1000), delay_min: 12, altitude_ft: 34000, distance_mi: 118, ground_speed_mph: 461, origin: "Denver", destination: "Phoenix", aircraft: "Boeing 737-8H4", registration: "N8324A", terminal: "4", photo: "" } } });
+  const h5 = el5.shadowRoot.innerHTML;
+  check("live airborne headline uses the ETA", h5.includes("Grandma &amp; Grandpa are in the air; wheels down 3:22 PM"));
+  check("plate tag switches to EST. WHEELS DOWN 3:22", h5.includes('<div class="tv">3:22</div>') && h5.includes("PM · EST. WHEELS DOWN"));
+  check("lede carries the Flightradar24 position sentence", /Flightradar24 has Southwest WN1234, a Boeing 737-8H4, at 34,000 feet, 118 miles from the house at 461 miles an hour, out of Denver\./.test(h5));
+  check("manifest: status ok, position + aircraft rows, countdown to est.", /Status<\/span><span class="v ok">En route/.test(h5) && h5.includes("34,000 ft · 118 mi · 461 mph") && h5.includes("Boeing 737-8H4 · N8324A") && /Countdown · est\.<\/span><span class="v">in 1 h 22 m/.test(h5));
+  // landed
+  const el6 = new Card(); el6.setConfig(cfgL);
+  el6.hass = mk([{ summary: "Arrive · Southwest 1234 · PHX 3:10 PM", start: "2026-09-08T15:10:00-07:00", end: "2026-09-08T16:00:00-07:00" }], stay, {
+    "sensor.visitors_flight_status": { state: "Landed 3:04 PM · at the gate", attributes: { phase: "landed", flight: "Southwest WN1234", eta: "3:04 PM", eta_ts: Math.floor(new Date(2026, 8, 8, 15, 4).getTime() / 1000), delay_min: -6, altitude_ft: 0, distance_mi: 22, ground_speed_mph: 0, origin: "Denver", destination: "Phoenix", aircraft: "Boeing 737-8H4", registration: "N8324A", terminal: "4", photo: "" } } });
+  const h6 = el6.shadowRoot.innerHTML;
+  check("landed headline + LANDED tag + terminal sentence", h6.includes("have landed; the house is full") && h6.includes("PM · LANDED") && h6.includes("wheels down at Terminal 4"));
+  // delayed at the gate, 45 min
+  const el7 = new Card(); el7.setConfig(cfgL);
+  el7.hass = mk([{ summary: "Arrive · Southwest 1234 · PHX 3:10 PM", start: "2026-09-09T15:10:00-07:00", end: "2026-09-09T16:00:00-07:00" }], stay, {
+    "sensor.visitors_flight_status": { state: "At the gate · departs 1:50 PM · 45 min late", attributes: { phase: "gate", flight: "Southwest WN1234", eta: "3:55 PM", eta_ts: Math.floor(new Date(2026, 8, 9, 15, 55).getTime() / 1000), delay_min: 45, altitude_ft: 0, distance_mi: 600, ground_speed_mph: 0, origin: "Denver", destination: "Phoenix", aircraft: "", registration: "", terminal: "", photo: "" } } });
+  const h7 = el7.shadowRoot.innerHTML;
+  check("delayed headline + status due", h7.includes("Grandma &amp; Grandpa land tomorrow at 3:55 PM, 45 minutes late") && /Status<\/span><span class="v due">At the gate/.test(h7));
+}
+console.log(fails ? `\n${fails} FAILED (live)` : "\nlive checks passed"); process.exit(fails ? 1 : 0);

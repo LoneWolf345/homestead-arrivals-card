@@ -4,7 +4,7 @@
  * stays in its attributes), the hourly forecast for the sky at wheels-down, and the house's
  * guest switches. Read-only: tap → more-info. Companion to homestead-pool-card,
  * homestead-motoring-card, homestead-waterworks-card and homestead-month-card. */
-const HAC_VERSION = "2026.9.2";
+const HAC_VERSION = "2026.9.3";
 const INK = "#3a2d1f", PAPER = "#f3e7d3", TAN = "#a3876a", BROWN = "#7a6248",
   TERRA = "#c65f38", DOT = "#cfb894", GREEN = "#2f7f6f", PLUM = "#6f4f9a";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -75,7 +75,7 @@ class HomesteadArrivalsCard extends HTMLElement {
       weather_entity: "", guest_mode_entity: "", guest_wifi_entity: "", alarm_entity: "", status_entity: "",
       guests: "", drive_minutes: 40, leave_hours: 2,
       plate: "", plate_number: "IV", plate_credit: "Engraving after a photograph", tag_position: "br",
-      column_rule: false, footer: "Times are as booked. The desk holds no opinion on delays until a status sensor is hired.",
+      column_rule: false, footer: "",
     }, config);
     if (c.plate && typeof c.plate === "string") c.plate = { src: c.plate, caption: "" };
     this._cfg = c;
@@ -136,11 +136,23 @@ class HomesteadArrivalsCard extends HTMLElement {
     const sky = this._skyAt(lead.start);
     const gm = c.guest_mode_entity ? st[c.guest_mode_entity] : null, wifi = c.guest_wifi_entity ? st[c.guest_wifi_entity] : null, al = c.alarm_entity ? st[c.alarm_entity] : null;
     const status = c.status_entity && st[c.status_entity] && !bad(st[c.status_entity].state) ? st[c.status_entity].state : "";
+    // live tracker (Flightradar24 via the status sensor's attributes); null until it has the flight
+    const sa = (c.status_entity && st[c.status_entity] && st[c.status_entity].attributes) || {};
+    const live = sa.phase && sa.phase !== "none" ? sa : null;
+    const delay = live ? Number(sa.delay_min) || 0 : 0;
+    const etaD = live && Number(sa.eta_ts) ? new Date(Number(sa.eta_ts) * 1000) : null;
+    const etaT = etaD ? short(etaD) : (sa.eta || "");
+    const lateTxt = delay >= 15 ? `, running ${delay} minutes late` : delay <= -10 ? `, running ${-delay} minutes early` : "";
     const stay = stays.length ? stays.map((s) => { const a = dateOnly(s.start), b = dateOnly(s.end); b.setDate(b.getDate() - 1); const nights = Math.max(1, Math.round((b - a) / 86400000)); return { a, b, nights, sum: s.summary }; })[0] : null;
 
     // headline
     let head;
-    if (lead.kind === "departure") head = lead.past ? `${G} ${have} flown; the house is quiet again` : when === "tomorrow" ? `${G} fly home tomorrow at ${t}` : `${G} fly out at ${t} today`;
+    if (live && lead.kind !== "departure" && (live.phase === "airborne" || live.phase === "taxiing")) head = `${G} ${are} in the air; wheels down ${etaT || "soon"}${lateTxt}`;
+    else if (live && lead.kind !== "departure" && live.phase === "landed") head = `${G} ${have} landed; the house is full`;
+    else if (live && lead.kind !== "departure" && delay >= 15 && etaT) head = `${G} land ${when} at ${etaT}, ${delay} minutes late`;
+    else if (live && lead.kind === "departure" && (live.phase === "airborne" || live.phase === "taxiing")) head = `${G} ${are} away; wheels up from ${aptText}`;
+    else if (live && lead.kind === "departure" && live.phase === "landed") head = `${G} ${have} landed${live.destination ? " at " + live.destination : ""}; the house is quiet again`;
+    else if (lead.kind === "departure") head = lead.past ? `${G} ${have} flown; the house is quiet again` : when === "tomorrow" ? `${G} fly home tomorrow at ${t}` : `${G} fly out at ${t} today`;
     else if (lead.kind === "arrival") head = lead.past ? `${G} ${have} landed; the house is full` : when === "tomorrow" ? `${G} land tomorrow at ${t}` : `${G} land today at ${t}`;
     else head = lead.past ? `${G} ${have} flown` : `${G} fly ${when} at ${t}`;
 
@@ -166,13 +178,21 @@ class HomesteadArrivalsCard extends HTMLElement {
         : `The travel desk reports ${G} ${when} aboard ${flText}, due into ${aptText} at ${t}, ${countdown(lead.start, now)} at press time${sky ? `, under a ${sky.cond} sky of ${sky.temp} degrees` : ""}. ${houseLine} The guest bed is the household's own affair.`;
     }
     if (lead.description) lede += ` The booking notes read: "${lead.description.replace(/\s+/g, " ").trim().slice(0, 140)}".`;
+    if (live) {
+      const who = live.flight || "the aircraft";
+      if (live.phase === "airborne") lede += ` Flightradar24 has ${who}${live.aircraft ? `, a ${live.aircraft},` : ""} at ${Number(sa.altitude_ft || 0).toLocaleString()} feet, ${sa.distance_mi} miles from the house at ${sa.ground_speed_mph} miles an hour${live.origin ? `, out of ${live.origin}` : ""}.`;
+      else if (live.phase === "landed") lede += ` Flightradar24 shows wheels down${live.terminal ? ` at Terminal ${live.terminal}` : ""}${live.aircraft ? `; the aircraft was a ${live.aircraft}` : ""}.`;
+      else if (live.phase === "taxiing") lede += ` Flightradar24 has ${who} on the ground and moving.`;
+      else lede += ` Flightradar24 lists it as ${String(status || "scheduled").toLowerCase()}.`;
+    }
 
     // plate
     let plate = "";
     if (c.plate && c.plate.src) {
       const pos = ["br", "bl", "tr", "tl"].includes(c.tag_position) ? c.tag_position : "br";
-      const tl = lead.kind === "departure" ? `${ap(lead.start.getHours())} · WHEELS UP` : `${ap(lead.start.getHours())} · WHEELS DOWN`;
-      plate = `<div class="fig" data-entity="${esc(c.window_entity)}"><img src="${esc(c.plate.src)}" alt=""><div class="tag ${pos}"><div class="tv">${esc(`${hh(lead.start.getHours())}:${pad2(lead.start.getMinutes())}`)}</div><div class="tl">${esc(tl)}</div></div></div>
+      const tagD = etaD && lead.kind !== "departure" ? etaD : lead.start;
+      const tl = lead.kind === "departure" ? `${ap(lead.start.getHours())} · WHEELS UP` : live && live.phase === "landed" ? `${ap(tagD.getHours())} · LANDED` : etaD ? `${ap(tagD.getHours())} · EST. WHEELS DOWN` : `${ap(lead.start.getHours())} · WHEELS DOWN`;
+      plate = `<div class="fig" data-entity="${esc(c.status_entity || c.window_entity)}"><img src="${esc(c.plate.src)}" alt=""><div class="tag ${pos}"><div class="tv">${esc(`${hh(tagD.getHours())}:${pad2(tagD.getMinutes())}`)}</div><div class="tl">${esc(tl)}</div></div></div>
       <div class="plate"><span><b>PLATE ${esc(c.plate_number)}.</b> <i>${esc(c.plate.caption || "")}</i></span><span class="r"><i>${esc(c.plate_credit)}</i></span></div>`;
     }
 
@@ -182,8 +202,12 @@ class HomesteadArrivalsCard extends HTMLElement {
       const k = `${f.kind === "departure" ? "Departs" : f.kind === "arrival" ? "Arrives" : "Flies"} ${f.day}${f.carrier || f.num ? " · " + [f.carrier, f.num].filter(Boolean).join(" ") : ""}`;
       rows.push({ k, v: `${short(f.start)}${f.apt ? " · " + f.apt : ""}`, cls: f === lead && !f.past ? "ok" : "", e: c.window_entity });
     }
-    rows.push({ k: "Status", v: status ? cap(status) : "As booked", cls: status && /delay|cancel|divert/i.test(status) ? "due" : "", e: c.status_entity || c.window_entity });
-    rows.push({ k: lead.past ? "Elapsed" : "Countdown", v: countdown(lead.start, now), cls: "", e: c.window_entity });
+    rows.push({ k: "Status", v: status ? cap(status) : "As booked", cls: delay >= 15 || /delay|cancel|divert/i.test(status) ? "due" : live && (live.phase === "airborne" || live.phase === "landed") ? "ok" : "", e: c.status_entity || c.window_entity });
+    if (live && live.phase === "airborne") rows.push({ k: "Position", v: `${Number(sa.altitude_ft || 0).toLocaleString()} ft · ${sa.distance_mi} mi · ${sa.ground_speed_mph} mph`, cls: "", e: c.status_entity });
+    if (live && live.aircraft) rows.push({ k: "Aircraft", v: `${live.aircraft}${live.registration ? " · " + live.registration : ""}`, cls: "", e: c.status_entity });
+    const cdRef = etaD && lead.kind !== "departure" ? etaD : lead.start;
+    const cdPast = live && live.phase === "landed" ? true : cdRef.getTime() < now.getTime();
+    rows.push({ k: cdPast ? "Elapsed" : etaD ? "Countdown · est." : "Countdown", v: countdown(cdRef, now), cls: "", e: c.status_entity || c.window_entity });
     if (stay) rows.push({ k: "The stay", v: `${monDay(stay.a)}${stay.b.getTime() === stay.a.getTime() ? "" : "–" + (stay.b.getMonth() === stay.a.getMonth() ? stay.b.getDate() : monDay(stay.b))} · ${stay.nights} night${stay.nights === 1 ? "" : "s"}`, cls: "", e: c.window_entity });
     if (gm) rows.push({ k: "Guest Mode", v: gm.state === "on" ? "On" : "Off", cls: gm.state === "on" ? "ok" : (lead.kind !== "departure" && !lead.past ? "due" : ""), e: c.guest_mode_entity });
     if (wifi) rows.push({ k: "Guest Wi-Fi", v: wifi.state === "on" ? "Lit" : "Dark", cls: wifi.state === "on" ? "ok" : "", e: c.guest_wifi_entity });
@@ -197,7 +221,7 @@ class HomesteadArrivalsCard extends HTMLElement {
       ${plate}
       <p class="lede">${esc(lede)}</p>
       ${manifest}
-      ${c.footer ? `<div class="foot">${esc(c.footer)}</div>` : ""}`;
+      <div class="foot">${esc(c.footer || (c.status_entity ? "Times are as booked until the aircraft moves; positions and estimates by Flightradar24." : "Times are as booked. The desk holds no opinion on delays until a status sensor is hired."))}</div>`;
     if (body === this._sig) return;
     this._sig = body;
     this._pin();
