@@ -4,7 +4,7 @@
  * stays in its attributes), the hourly forecast for the sky at wheels-down, and the house's
  * guest switches. Read-only: tap → more-info. Companion to homestead-pool-card,
  * homestead-motoring-card, homestead-waterworks-card and homestead-month-card. */
-const HAC_VERSION = "2026.9.6";
+const HAC_VERSION = "2026.9.7";
 const INK = "#3a2d1f", PAPER = "#f3e7d3", TAN = "#a3876a", BROWN = "#7a6248",
   TERRA = "#c65f38", DOT = "#cfb894", GREEN = "#2f7f6f", PLUM = "#6f4f9a";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -57,7 +57,8 @@ function guestsFrom(stays, flights, fallback) {
   }
   return fallback || "Our visitors";
 }
-const plural = (g) => /&|\+|\b(and|family|folks|parents|grandparents|kids|cousins|everyone)\b/i.test(g) || (/s$/i.test(g.trim()) && !/^(grandma|grandpa|mom|dad|uncle|aunt|chris|james|thomas|lucas|nicholas|louis|charles|marcus|jesus)$/i.test(g.trim()));
+// plural only on clear signals: "&", "+", "and", family nouns, or "The Smiths" (the + plural surname)
+const plural = (g) => /&|\+|\b(and|family|folks|parents|grandparents|kids|cousins|everyone|boys|girls|twins)\b|\bthe\s+[a-z]+s\b/i.test(String(g || ""));
 
 function countdown(d, now) {
   const ms = d.getTime() - now.getTime(), a = Math.abs(ms), h = Math.floor(a / 3600000), m = Math.round((a % 3600000) / 60000);
