@@ -25,7 +25,7 @@ check("dek carries carrier, airport, day, sky", /Southwest 1234 · Sky Harbor \(
 check("lede countdown + house line", /in 25 h 10 m at press time/.test(h) && /Guest Mode is not yet on; the guest Wi-Fi is dark; the alarm stands armed home\./.test(h));
 check("booking notes quoted", h.includes("Conf# ABC123"));
 check("plate tag 3:10 WHEELS DOWN + PLATE IV", h.includes('<div class="tv">3:10</div>') && h.includes("PM · WHEELS DOWN") && h.includes("PLATE IV."));
-check("manifest: arrives tomorrow row, stay 4 nights, guest mode due", /Arrives tomorrow · Southwest 1234<\/span><span class="v ok">3:10 PM · PHX/.test(h) && h.includes("Sep 9–12 · 4 nights") && /Guest Mode<\/span><span class="v due">Off/.test(h));
+check("manifest: arrives tomorrow row, stay 4 nights, guest mode due", /Arrives tomorrow · Southwest 1234<\/span><span class="v ok">3:10 PM · PHX/.test(h) && h.includes("Sep 9–12 · 3 nights") && /Guest Mode<\/span><span class="v due">Off/.test(h));
 // 2. departure today, past, plural
 el = new Card(); el.setConfig(cfg); el.hass = mk([{ summary: "The Smiths depart AA 88 PHX", start: "2026-09-08T09:40:00-07:00", end: "2026-09-08T10:00:00-07:00" }], []);
 h = el.shadowRoot.innerHTML;

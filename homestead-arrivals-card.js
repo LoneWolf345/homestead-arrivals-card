@@ -49,7 +49,7 @@ function parseFlight(ev, now) {
 }
 
 function guestsFrom(stays, flights, fallback) {
-  const clean = (s) => String(s || "").replace(/\b(visitors?|guests?|visit(ing)?|stay(ing)?|here|in town|with us|are|is|the)\b/gi, " ").replace(/[:·—-]+/g, " ").replace(/\s+/g, " ").trim();
+  const clean = (s) => { const g = String(s || "").replace(/\b(visitors?|guests?|visit(ing)?|stay(ing)?|here|in town|with us|are|is)\b/gi, " ").replace(/[:·—-]+/g, " ").replace(/\s+/g, " ").trim(); return /^the$/i.test(g) ? "" : g; };
   for (const s of stays || []) { const g = clean(s.summary); if (g.length > 1) return g; }
   for (const f of flights || []) {
     const m = String(f.summary || "").match(/^(.+?)\s+(arriv|land|depart|leav|fl(y|ies)|come|coming|inbound|outbound)/i);
