@@ -65,4 +65,32 @@ console.log(fails ? `\n${fails} FAILED` : "\nall passed");
   const h7 = el7.shadowRoot.innerHTML;
   check("delayed headline + status due", h7.includes("Grandma &amp; Grandpa land tomorrow at 3:55 PM, 45 minutes late") && /Status<\/span><span class="v due">At the gate/.test(h7));
 }
-console.log(fails ? `\n${fails} FAILED (live)` : "\nlive checks passed"); process.exit(fails ? 1 : 0);
+console.log(fails ? `\n${fails} FAILED (live)` : "\nlive checks passed");
+// 6. route chart + halftone photo
+{
+  const liveAttrs = { phase: "airborne", flight: "Southwest WN1234", eta: "3:22 PM", eta_ts: Math.floor(new Date(2026, 8, 8, 15, 22).getTime() / 1000), delay_min: 12, altitude_ft: 34000, distance_mi: 118, ground_speed_mph: 461, origin: "Dallas", destination: "Phoenix", aircraft: "Boeing 737-8H4", registration: "N8324A", terminal: "4", photo: "https://cdn.jetphotos.com/full/6/12345_1700000000.jpg", latitude: 33.2, longitude: -105.1, heading: 265, origin_code: "DAL", destination_code: "PHX", origin_lat: 32.85, origin_lon: -96.85, destination_lat: 33.43, destination_lon: -112.01, track: [[32.95, -97.5], [33.1, -100.2], [33.2, -103.0]] };
+  const fl = [{ summary: "Arrive · Southwest 1234 · PHX 3:10 PM", start: "2026-09-08T15:10:00-07:00", end: "2026-09-08T16:00:00-07:00" }];
+  const cfgL = Object.assign({}, cfg, { status_entity: "sensor.visitors_flight_status" });
+  const el8 = new Card(); el8.setConfig(cfgL);
+  el8.hass = mk(fl, stay, { "sensor.visitors_flight_status": { state: "En route · landing 3:22 PM · 12 min late", attributes: liveAttrs } });
+  const h8 = el8.shadowRoot.innerHTML;
+  check("route chart replaces the woodcut (PLATE IV, no plate-flight.jpg)", h8.includes('class="routechart"') && h8.includes("PLATE IV.") && !h8.includes("plate-flight.jpg"));
+  check("chart: land lines, dashed great circle, plum track, rotated plane, labels, scale, compass", /<path d="M[^"]{200,}" fill="none" stroke="#a3876a"/.test(h8) && h8.includes('stroke-dasharray="3 3.5"') && /stroke="#6f4f9a" stroke-width="2.2"/.test(h8) && /rotate\(265\.0\)/.test(h8) && h8.includes(">DALLAS<") && h8.includes(">PHOENIX<") && h8.includes(">100 MI<") && h8.includes(">N</text>"));
+  check("chart caption + credit + tag on the chart", h8.includes("Route chart, Dallas to Phoenix; the aircraft as of press time.") && h8.includes("Drawn from Flightradar24") && h8.includes("PM · EST. WHEELS DOWN"));
+  check("halftone photo cut with caption", /class="cut"><div class="halftone"><img src="https:\/\/cdn\.jetphotos\.com\/full\/6\/12345_1700000000\.jpg"/.test(h8) && h8.includes("N8324A, a Boeing 737-8H4 — the very machine."));
+  // scheduled, no position: chart as filed, no plane glyph, no photo when none
+  const el9 = new Card(); el9.setConfig(cfgL);
+  el9.hass = mk(fl, stay, { "sensor.visitors_flight_status": { state: "Scheduled · departs 1:05 PM", attributes: Object.assign({}, liveAttrs, { phase: "scheduled", latitude: 0, longitude: 0, heading: 0, track: [], photo: "", delay_min: 0 }) } });
+  const h9 = el9.shadowRoot.innerHTML;
+  check("scheduled: chart as filed, no plane, no photo", h9.includes('class="routechart"') && h9.includes("; as filed.") && !h9.includes("M0 -9 L2 -3 L9 1") && !h9.includes('class="cut"'));
+  // below mode: woodcut + PLATE V
+  const el10 = new Card(); el10.setConfig(Object.assign({}, cfgL, { route_chart: "below" }));
+  el10.hass = mk(fl, stay, { "sensor.visitors_flight_status": { state: "En route", attributes: liveAttrs } });
+  const h10 = el10.shadowRoot.innerHTML;
+  check("below mode keeps the woodcut and adds PLATE V", h10.includes("plate-flight.jpg") && h10.includes("PLATE IV.") && h10.includes("PLATE V.") && h10.includes('class="routechart"'));
+  // no airport coordinates: woodcut only
+  const el11 = new Card(); el11.setConfig(cfgL);
+  el11.hass = mk(fl, stay, { "sensor.visitors_flight_status": { state: "As booked", attributes: { phase: "none" } } });
+  check("no tracker data: woodcut only", el11.shadowRoot.innerHTML.includes("plate-flight.jpg") && !el11.shadowRoot.innerHTML.includes('class="routechart"'));
+}
+console.log(fails ? `\n${fails} FAILED (chart)` : "\nchart checks passed"); process.exit(fails ? 1 : 0);

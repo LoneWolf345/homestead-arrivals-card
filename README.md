@@ -6,7 +6,8 @@
 
 - **A headline** written from the calendar: *Grandma & Grandpa land tomorrow at 3:10 PM*, *The Smiths fly home today at 9:40 AM*, *…have landed; the house is full*.
 - **A dek** with the carrier and flight number, the airport, the day, and the sky at the gate from your weather entity's hourly forecast.
-- **A woodcut plate** (optional) with a pasted tag carrying the wheels-down or wheels-up time.
+- **A route chart** drawn in ink once the tracker knows the airports: bundled coastlines and state lines (no tiles, no internet), a dotted great-circle from origin to destination, the flown track in plum, a plane glyph turned to its heading, city stamps, a 100-mile scale and a compass. It prints as filed the day before and comes alive in the air. Falls back to **a woodcut plate** (optional) with a pasted tag carrying the wheels-down or wheels-up time.
+- **The actual aircraft**, as a halftone newspaper photograph floated into the lede (Flightradar24 supplies a JetPhotos picture of the very tail number), captioned with registration and type.
 - **A drop-cap lede**: countdown at press time, the drive from the curb, and the state of the house — Guest Mode, guest Wi-Fi, alarm — plus any booking notes from the event description.
 - **The manifest**: every flight in the window, status (an optional flight-status sensor, else *As booked*), countdown, the stay's dates and nights, and the guest switches. Tap any row for more-info.
 
@@ -70,7 +71,9 @@ visibility:
 | `window_entity` | required | Binary sensor with `flights` and `stays` attributes (see above) |
 | `weather_entity` | — | Hourly forecast for the sky at the gate |
 | `guest_mode_entity`, `guest_wifi_entity`, `alarm_entity` | — | House rows in the manifest and the lede |
-| `status_entity` | — | Optional flight-status sensor; its state prints in the Status row (delays go terracotta) |
+| `status_entity` | — | Live tracker sensor (the Homestead's `sensor.visitors_flight_status`, built on the Flightradar24 integration). Its state prints in the Status row; attributes drive the ETA headline, the chart and the photo: `phase`, `eta`, `eta_ts`, `delay_min`, `altitude_ft`, `distance_mi`, `ground_speed_mph`, `origin`, `destination`, `aircraft`, `registration`, `terminal`, `photo`, `latitude`, `longitude`, `heading`, `origin_lat`/`origin_lon`, `destination_lat`/`destination_lon`, `track` |
+| `route_chart` | `replace` | `replace` the woodcut with the chart when available, `below` to print both (chart as Plate V), `off` |
+| `aircraft_photo` | `true` | Print the halftone photograph when the tracker has one |
 | `guests` | from the stay | Override the guests' name |
 | `drive_minutes`, `leave_hours` | 40, 2 | Curb-to-door drive and leave-ahead advice |
 | `plate` | — | `{src, caption}`; `plate_number` (IV), `plate_credit`, `tag_position` (br/bl/tr/tl) |
