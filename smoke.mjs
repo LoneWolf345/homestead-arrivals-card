@@ -38,7 +38,9 @@ check("nothing printed when the window is off", el.shadowRoot.innerHTML === "");
 // 4. departure tomorrow, singular guest, unknown carrier words
 el = new Card(); el.setConfig(cfg); el.hass = mk([{ summary: "Uncle Bob flies home WN 402 from Mesa Gateway", start: "2026-09-09T06:15:00-07:00", end: "2026-09-09T07:00:00-07:00" }], [{ summary: "Uncle Bob visiting", start: "2026-09-05", end: "2026-09-10" }]);
 h = el.shadowRoot.innerHTML;
-check("departure tomorrow, singular, AZA from words", h.includes("Uncle Bob fly home tomorrow at 6:15 AM") === false && h.includes("Uncle Bob flies") === false ? h.includes("Uncle Bob fly home tomorrow at 6:15 AM") : true);
+check("departure tomorrow, singular verb", h.includes("Uncle Bob flies home tomorrow at 6:15 AM"));
+{ const elx = new Card(); elx.setConfig(cfg); elx.hass = mk([{ summary: "Arrive · Delta 1047 · PHX 3:10 PM", start: "2026-09-08T15:10:00-07:00", end: "2026-09-08T16:10:00-07:00" }], [{ summary: "Dan Langness here", start: "2026-09-08", end: "2026-09-14" }]);
+  check("single guest with an s-name is singular (Dan Langness lands)", elx.shadowRoot.innerHTML.includes("Dan Langness lands today at 3:10 PM")); }
 check("guest name from the stay + Mesa Gateway", h.includes("Uncle Bob") && h.includes("Mesa Gateway (AZA)") && h.includes("Southwest 402"));
 console.log(fails ? `\n${fails} FAILED` : "\nall passed"); 
 // 5. live tracker: airborne, 12 min late

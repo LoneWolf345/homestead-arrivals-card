@@ -4,7 +4,7 @@
  * stays in its attributes), the hourly forecast for the sky at wheels-down, and the house's
  * guest switches. Read-only: tap → more-info. Companion to homestead-pool-card,
  * homestead-motoring-card, homestead-waterworks-card and homestead-month-card. */
-const HAC_VERSION = "2026.9.7";
+const HAC_VERSION = "2026.9.8";
 const INK = "#3a2d1f", PAPER = "#f3e7d3", TAN = "#a3876a", BROWN = "#7a6248",
   TERRA = "#c65f38", DOT = "#cfb894", GREEN = "#2f7f6f", PLUM = "#6f4f9a";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -201,7 +201,7 @@ class HomesteadArrivalsCard extends HTMLElement {
     // the flight the article is about: the next one to come, else the latest gone
     const lead = flights.find((f) => !f.past) || flights[flights.length - 1];
     const G = guestsFrom(stays, flightsRaw, c.guests), pl = plural(G);
-    const are = pl ? "are" : "is", have = pl ? "have" : "has";
+    const are = pl ? "are" : "is", have = pl ? "have" : "has", land = pl ? "land" : "lands", fly = pl ? "fly" : "flies";
     const t = short(lead.start), when = lead.day, dayName = DAYS[lead.start.getDay()];
     const fl = [lead.carrier, lead.num].filter(Boolean).join(" ");
     const flText = fl ? (lead.carrier ? `${lead.carrier} ${lead.num}`.trim() : `flight ${lead.num}`) : "the flight";
@@ -222,12 +222,12 @@ class HomesteadArrivalsCard extends HTMLElement {
     let head;
     if (live && lead.kind !== "departure" && (live.phase === "airborne" || live.phase === "taxiing")) head = `${G} ${are} in the air; wheels down ${etaT || "soon"}${lateTxt}`;
     else if (live && lead.kind !== "departure" && live.phase === "landed") head = `${G} ${have} landed; the house is full`;
-    else if (live && lead.kind !== "departure" && delay >= 15 && etaT) head = `${G} land ${when} at ${etaT}, ${delay} minutes late`;
+    else if (live && lead.kind !== "departure" && delay >= 15 && etaT) head = `${G} ${land} ${when} at ${etaT}, ${delay} minutes late`;
     else if (live && lead.kind === "departure" && (live.phase === "airborne" || live.phase === "taxiing")) head = `${G} ${are} away; wheels up from ${aptText}`;
     else if (live && lead.kind === "departure" && live.phase === "landed") head = `${G} ${have} landed${live.destination ? " at " + live.destination : ""}; the house is quiet again`;
-    else if (lead.kind === "departure") head = lead.past ? `${G} ${have} flown; the house is quiet again` : when === "tomorrow" ? `${G} fly home tomorrow at ${t}` : `${G} fly out at ${t} today`;
-    else if (lead.kind === "arrival") head = lead.past ? `${G} ${have} landed; the house is full` : when === "tomorrow" ? `${G} land tomorrow at ${t}` : `${G} land today at ${t}`;
-    else head = lead.past ? `${G} ${have} flown` : `${G} fly ${when} at ${t}`;
+    else if (lead.kind === "departure") head = lead.past ? `${G} ${have} flown; the house is quiet again` : when === "tomorrow" ? `${G} ${fly} home tomorrow at ${t}` : `${G} ${fly} out at ${t} today`;
+    else if (lead.kind === "arrival") head = lead.past ? `${G} ${have} landed; the house is full` : when === "tomorrow" ? `${G} ${land} tomorrow at ${t}` : `${G} ${land} today at ${t}`;
+    else head = lead.past ? `${G} ${have} flown` : `${G} ${fly} ${when} at ${t}`;
 
     // dek
     const dekBits = [flText !== "the flight" ? flText : null, lead.aptName ? aptText : null, `${dayName} ${monDay(lead.start)}`, sky ? `${sky.temp}° and ${sky.cond} at the gate` : null].filter(Boolean);
