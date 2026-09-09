@@ -50,8 +50,8 @@ console.log(fails ? `\n${fails} FAILED` : "\nall passed");
   const h5 = el5.shadowRoot.innerHTML;
   check("live airborne headline uses the ETA", h5.includes("Grandma &amp; Grandpa are in the air; wheels down 3:22 PM"));
   check("plate tag switches to EST. WHEELS DOWN 3:22", h5.includes('<div class="tv">3:22</div>') && h5.includes("PM · EST. WHEELS DOWN"));
-  check("lede carries the Flightradar24 position sentence", /Flightradar24 has Southwest WN1234, a Boeing 737-8H4, at 34,000 feet, 118 miles from the house at 461 miles an hour, out of Denver\./.test(h5));
-  check("manifest: status ok, position + aircraft rows, countdown to est.", /Status<\/span><span class="v ok">En route/.test(h5) && h5.includes("34,000 ft · 118 mi · 461 mph") && h5.includes("Boeing 737-8H4 · N8324A") && /Countdown · est\.<\/span><span class="v">in 1 h 22 m/.test(h5));
+  check("lede carries the Flightradar24 position sentence", /Flightradar24 has Southwest WN1234, a Boeing 737-8H4, at 34,000 feet, 118 miles from the house, making 461 miles an hour, out of Denver\./.test(h5));
+  check("manifest: status ok, position + aircraft rows, countdown to est.", /Status<\/span><span class="v ok">En route/.test(h5) && h5.includes("34,000 ft · 118 mi out · 461 mph") && h5.includes("Boeing 737-8H4 · N8324A") && /Countdown · est\.<\/span><span class="v">in 1 h 22 m/.test(h5));
   // landed
   const el6 = new Card(); el6.setConfig(cfgL);
   el6.hass = mk([{ summary: "Arrive · Southwest 1234 · PHX 3:10 PM", start: "2026-09-08T15:10:00-07:00", end: "2026-09-08T16:00:00-07:00" }], stay, {

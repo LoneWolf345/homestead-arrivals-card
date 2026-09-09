@@ -4,7 +4,7 @@
  * stays in its attributes), the hourly forecast for the sky at wheels-down, and the house's
  * guest switches. Read-only: tap → more-info. Companion to homestead-pool-card,
  * homestead-motoring-card, homestead-waterworks-card and homestead-month-card. */
-const HAC_VERSION = "2026.9.4";
+const HAC_VERSION = "2026.9.5";
 const INK = "#3a2d1f", PAPER = "#f3e7d3", TAN = "#a3876a", BROWN = "#7a6248",
   TERRA = "#c65f38", DOT = "#cfb894", GREEN = "#2f7f6f", PLUM = "#6f4f9a";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -180,7 +180,11 @@ class HomesteadArrivalsCard extends HTMLElement {
     if (lead.description) lede += ` The booking notes read: "${lead.description.replace(/\s+/g, " ").trim().slice(0, 140)}".`;
     if (live) {
       const who = live.flight || "the aircraft";
-      if (live.phase === "airborne") lede += ` Flightradar24 has ${who}${live.aircraft ? `, a ${live.aircraft},` : ""} at ${Number(sa.altitude_ft || 0).toLocaleString()} feet, ${sa.distance_mi} miles from the house at ${sa.ground_speed_mph} miles an hour${live.origin ? `, out of ${live.origin}` : ""}.`;
+      if (live.phase === "airborne") {
+        const alt = Number(sa.altitude_ft) || 0, spd = Number(sa.ground_speed_mph) || 0, dist = Number(sa.distance_mi) || 0;
+        const bits = [alt > 0 ? `at ${alt.toLocaleString()} feet` : "", dist > 0 ? `${dist} miles from the house` : "", spd > 0 ? `making ${spd} miles an hour` : ""].filter(Boolean);
+        lede += ` Flightradar24 has ${who}${live.aircraft ? `, a ${live.aircraft},` : ""}${bits.length ? " " + bits.join(", ") : " in the air"}${live.origin ? `, out of ${live.origin}` : ""}.`;
+      }
       else if (live.phase === "landed") lede += ` Flightradar24 shows wheels down${live.terminal ? ` at Terminal ${live.terminal}` : ""}${live.aircraft ? `; the aircraft was a ${live.aircraft}` : ""}.`;
       else if (live.phase === "taxiing") lede += ` Flightradar24 has ${who} on the ground and moving.`;
       else lede += ` Flightradar24 lists it as ${String(status || "scheduled").toLowerCase()}.`;
@@ -203,7 +207,11 @@ class HomesteadArrivalsCard extends HTMLElement {
       rows.push({ k, v: `${short(f.start)}${f.apt ? " · " + f.apt : ""}`, cls: f === lead && !f.past ? "ok" : "", e: c.window_entity });
     }
     rows.push({ k: "Status", v: status ? cap(status) : "As booked", cls: delay >= 15 || /delay|cancel|divert/i.test(status) ? "due" : live && (live.phase === "airborne" || live.phase === "landed") ? "ok" : "", e: c.status_entity || c.window_entity });
-    if (live && live.phase === "airborne") rows.push({ k: "Position", v: `${Number(sa.altitude_ft || 0).toLocaleString()} ft · ${sa.distance_mi} mi · ${sa.ground_speed_mph} mph`, cls: "", e: c.status_entity });
+    if (live && live.phase === "airborne") {
+      const alt = Number(sa.altitude_ft) || 0, spd = Number(sa.ground_speed_mph) || 0, dist = Number(sa.distance_mi) || 0;
+      const pos = [alt > 0 ? `${alt.toLocaleString()} ft` : "", dist > 0 ? `${dist} mi out` : "", spd > 0 ? `${spd} mph` : ""].filter(Boolean).join(" · ");
+      if (pos) rows.push({ k: "Position", v: pos, cls: "", e: c.status_entity });
+    }
     if (live && live.aircraft) rows.push({ k: "Aircraft", v: `${live.aircraft}${live.registration ? " · " + live.registration : ""}`, cls: "", e: c.status_entity });
     const cdRef = etaD && lead.kind !== "departure" ? etaD : lead.start;
     const cdPast = live && live.phase === "landed" ? true : cdRef.getTime() < now.getTime();
