@@ -57,7 +57,7 @@ function guestsFrom(stays, flights, fallback) {
   }
   return fallback || "Our visitors";
 }
-const plural = (g) => /\b(and|&|family|folks|parents|grandparents|kids|cousins|everyone)\b/i.test(g) || (/s$/i.test(g.trim()) && !/^(grandma|grandpa|mom|dad|uncle|aunt|chris|james|thomas|lucas|nicholas|louis|charles|marcus|jesus)$/i.test(g.trim()));
+const plural = (g) => /&|\+|\b(and|family|folks|parents|grandparents|kids|cousins|everyone)\b/i.test(g) || (/s$/i.test(g.trim()) && !/^(grandma|grandpa|mom|dad|uncle|aunt|chris|james|thomas|lucas|nicholas|louis|charles|marcus|jesus)$/i.test(g.trim()));
 
 function countdown(d, now) {
   const ms = d.getTime() - now.getTime(), a = Math.abs(ms), h = Math.floor(a / 3600000), m = Math.round((a % 3600000) / 60000);
